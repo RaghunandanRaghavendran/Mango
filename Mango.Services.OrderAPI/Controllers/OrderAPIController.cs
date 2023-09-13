@@ -9,6 +9,8 @@ using Mango.Services.OrderAPI.Models;
 using Azure;
 using Stripe.Checkout;
 using Mango.MessageBus;
+using Microsoft.EntityFrameworkCore;
+using Stripe;
 
 namespace Mango.Services.OrderAPI.Controllers
 {
@@ -59,7 +61,6 @@ namespace Mango.Services.OrderAPI.Controllers
                     _responseType.IsSuccess = false;
                     _responseType.Message = "Order creation failed to save";
                 }
-
             }
             catch (Exception ex)
             {
@@ -82,7 +83,6 @@ namespace Mango.Services.OrderAPI.Controllers
                     CancelUrl = stripeRequestDto.CancelURL,
                     LineItems = new List<SessionLineItemOptions>(),
                     Mode = "payment",
-
                 };
 
                 var DiscountsObj = new List<SessionDiscountOptions>()
@@ -103,12 +103,11 @@ namespace Mango.Services.OrderAPI.Controllers
                             Currency = "inr",
                             ProductData = new SessionLineItemPriceDataProductDataOptions
                             {
-                                Name = item.Product.Name
+                                Name = item.Product?.Name
                             }
                         },
                         Quantity = item.Count
                     };
-
                     options.LineItems.Add(sessionLineItem);
                 }
 
@@ -123,7 +122,6 @@ namespace Mango.Services.OrderAPI.Controllers
                 orderHeader.StripeSessionId = session.Id;
                 await _dbcontext.SaveChangesAsync();
                 _responseType.Result = stripeRequestDto;
-
             }
             catch (Exception ex)
             {
@@ -139,7 +137,6 @@ namespace Mango.Services.OrderAPI.Controllers
         {
             try
             {
-
                 Order order = _dbcontext.Orders.First(u => u.OrderId == orderId);
 
                 var service = new SessionService();
@@ -166,11 +163,84 @@ namespace Mango.Services.OrderAPI.Controllers
                     await _messageBus.PublishMessage(rewardsDTO, topicName);
                     _responseType.Result = _mapper.Map<OrderDTO>(order);
                 }
-
             }
             catch (Exception ex)
             {
                 _responseType.Message = ex.Message;
+                _responseType.IsSuccess = false;
+            }
+            return _responseType;
+        }
+        
+        [Authorize]
+        [HttpGet("GetOrders")]
+        public async Task<ResponseType?> Get(string? userId = "")
+        {
+            try
+            {
+                IEnumerable<Order> orders;
+                if (User.IsInRole(StaticDetails.ROLE_ADMIN))
+                {
+                     orders = await _dbcontext.Orders.Include(u => u.OrderDetails).OrderByDescending(u => u.OrderId).ToListAsync();
+                }
+                else
+                {
+                    orders = await _dbcontext.Orders.Include(u => u.OrderDetails).Where(u => u.UserId == userId).OrderByDescending(u => u.OrderId).ToListAsync();
+                }
+                _responseType.Result = _mapper.Map<IEnumerable<OrderDTO>>(orders);
+            }
+            catch (Exception ex)
+            {
+                _responseType.IsSuccess = false;
+                _responseType.Message = ex.Message;
+            }
+            return _responseType;
+        }
+
+        [Authorize]
+        [HttpGet("GetOrder/{id:int}")]
+        public async Task<ResponseType?> Get(int id)
+        {
+            try
+            {
+                Order orderHeader = await _dbcontext.Orders.Include(u => u.OrderDetails).FirstAsync(u => u.OrderId == id);
+                _responseType.Result = _mapper.Map<OrderDTO>(orderHeader);
+            }
+            catch (Exception ex)
+            {
+                _responseType.IsSuccess = false;
+                _responseType.Message = ex.Message;
+            }
+            return _responseType;
+        }
+
+        [Authorize]
+        [HttpPost("UpdateOrderStatus/{orderId:int}")]
+        public async Task<ResponseType> UpdateOrderStatus(int orderId, [FromBody] string newStatus)
+        {
+            try
+            {
+                Order order = _dbcontext.Orders.First(u => u.OrderId == orderId);
+                if (order != null)
+                {
+                    if (newStatus == StaticDetails.STATUS_CANCELLED)
+                    {
+                        //we will give refund
+                        var options = new RefundCreateOptions
+                        {
+                            Reason = RefundReasons.RequestedByCustomer,
+                            PaymentIntent = order.PaymentIntentId
+                        };
+
+                        var service = new RefundService();
+                        Refund refund = service.Create(options);
+                    }
+                    order.Status = newStatus;
+                    _dbcontext.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
                 _responseType.IsSuccess = false;
             }
             return _responseType;

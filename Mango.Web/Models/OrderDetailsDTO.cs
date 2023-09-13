@@ -6,7 +6,7 @@ namespace Mango.Web.Models
     {
         public int OrderDetailsId { get; set; }
         public int OrderId { get; set; }
-        public OrderDTO? Order { get; set; }
+        //public OrderDTO? Order { get; set; }
         public int ProductId { get; set; }
         public ProductDTO? Product { get; set; }
         public int Count { get; set; }

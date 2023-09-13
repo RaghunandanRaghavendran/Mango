@@ -9,9 +9,9 @@
         public const string STATUS_REFUNDED = "Refunded";
         public const string STATUS_CANCELLED = "Cancelled";
 
-        public const string ROLE_ADMIN = "Admin";
+        public const string ROLE_ADMIN = "ADMIN";
         public const string ROLE_CUSTOMER = "CUSTOMER";
         public const string ROLE_KITCHEN = "KITCHEN";
-        public const string ROLE_FRONTDESK = "Front Desk";
+        public const string ROLE_FRONTDESK = "FRONT DESK";
     }
 }
