@@ -13,7 +13,7 @@ namespace Mango.Services.AuthAPI.Controllers
         public AuthController(IAuthService authService)
         {
             _authService = authService;
-            _responseType = new();
+            _responseType = new ResponseType();
         }
 
 
