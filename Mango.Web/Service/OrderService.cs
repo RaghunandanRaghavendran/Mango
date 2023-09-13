@@ -31,6 +31,34 @@ namespace Mango.Web.Service
             });
         }
 
+        public async Task<ResponseType?> GetAllOrder(string? userId)
+        {
+            return await _baseService.SendAsync(new RequestType()
+            {
+                ApiType = StaticDetails.ApiType.GET,
+                Url = StaticDetails.OrderAPIBase + "/api/order/GetOrders?userId=" +userId
+			});
+        }
+
+		public async Task<ResponseType?> GetOrder(int orderId)
+        {
+            return await _baseService.SendAsync(new RequestType()
+            {
+                ApiType = StaticDetails.ApiType.GET,
+                Url = StaticDetails.OrderAPIBase + "/api/order/GetOrder/" + orderId
+            });
+        }
+
+        public async Task<ResponseType?> UpdateOrderStatus(int orderId, string newStatus)
+        {
+            return await _baseService.SendAsync(new RequestType()
+            {
+                ApiType = StaticDetails.ApiType.POST,
+                Data = newStatus,
+                Url = StaticDetails.OrderAPIBase + "/api/order/UpdateOrderStatus/" +orderId
+            });
+        }
+
         public async Task<ResponseType?> ValidateStripeSessionAsync(int orderId)
         {
             return await _baseService.SendAsync(new RequestType()

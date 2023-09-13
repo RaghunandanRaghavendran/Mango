@@ -64,7 +64,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseStaticFiles(); // Added by Raghu.....
 app.MapControllers();
 ApplyMigration();
 
