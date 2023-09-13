@@ -1,0 +1,37 @@
+﻿API used for the Autherization - It uses the IdentityServer from the Microsoft which will take care registering the users
+This will also take care of JWT token which will be used to configure the options for Authentication.
+
+1. Added the Nuget package referece, All the previous reference of packages are being copied here and along with that 
+	added the reference of Idenity server.
+2. Added the DbContext and Created the Identity tables and Check all the Models used.
+	Created the ApplicationDBContext class and created the DbSet Model for ApplicationUsers
+	Make sure the OnModelCreating methods is used here else the migration will fail here
+3. Run Migration first using the IdenityUsers
+         public class ApplicationDbContext:IdentityDbContext<IdentityUser>
+         {
+            public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+            {
+            }
+         }
+4. Add the Custom Property to User table
+    Added the ApplicationUser and used the Custom property
+5. Run the migration again to add Name to the user table
+6. Added the Endpoints for Login and Register
+7. Created the Service AuthService for Register method and Login method
+    Implemented the Register method first
+        -UserManager is used for calling the createAsync calls. Please refer to the AuthService
+8. Register method from AuthController completed by consuming the service
+9. Once the user is registered, the login method in AuthService and Controller is completed
+    username : raghunandhan.r@gmail.com, F@strobot5  - No role
+    username : swathy@gmail.com, Swathy@123          
+    username : raghunandhan.r@outlook.com, F@strobot5 - No role
+    userName": "vikram.pragyan@gmail.com","password": "Ch@ndr@y@n3"
+    userName : govinda.swamy@gmail.com, GovindaSwamy@123
+    userName : daiwik_raghunandhan@gmail.com, Daiwik@123
+    usserName : swathi199002@gmail.com, Ch@ndr@y@n3
+
+10. JWTTokenHandler is implemented - Please refer the changes for JWTTokenHandler
+        - JWT Handler created for GenerateToken
+        - Used the dependecy injection to provide the configurations
+11. Role is completed. - Please refer to these section.
+

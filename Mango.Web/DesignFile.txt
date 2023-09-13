@@ -1,0 +1,55 @@
+﻿This the Web Project created for having a common UI
+
+Design
+
+Created the ASP.NET Web project with MVC type, Which gave the HomeController by default and a working UI application
+
+Section 1 : Consuming the Coupon API
+
+A. Created the Models for CouponDTO, RequestType and ResponseType
+    a. ResponseType - Result, Message, IsSucceess
+    b. RequestType
+        public ApiType ApiType { get; set; } = ApiType.GET;
+        public string Url { get; set; }
+        public object Data { get; set; }
+        public string AccessToken { get; set; }
+
+    c. CouponDTO - Same props used in API
+
+B. Created the Service and IService folders
+    a. BaseService and IBaseService - It defines a method SendAsync which makes the generalized method for API call
+       SendAsync
+         - It uses the dependecy of HttpClientFactory which can make http calls
+         - HttpRequestMessage which will include the headers, Urls, Contents needs to be filled for Post request 
+         - make the call: SendAsync(message) (Message was the object of HttpRequestMessage) SendAsyc is part of HttpClientFactory
+         - Capture the respose and return the ResponseType
+    b. CouponService and ICouponService - It defines the method for CRUD operations, please refer to the implementation
+    c. Registered the Coupons and Base services in Program.cs
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddHttpClient();
+            builder.Services.AddHttpClient<ICouponService, CouponService>();
+            StaticDetails.CouponAPIBase = builder.Configuration["ServiceUrls:CouponAPI"];
+
+            builder.Services.AddScoped<ICouponService, CouponService>();
+            builder.Services.AddScoped<IBaseService, BaseService>();
+
+C. Build the project and make sure UI project is working
+D. Use Bootswatch reference - Download any theme and make sure the css is repalced with the bootstrap css
+    wwwroot/lib/bootstap/dist/css/bootstrap.css
+E. Go to the layout and replace the bootstap reference from min to bootstap.css
+F. Added the Dropdown to show the Coupons section - Dropdown is taken from Bootstap nav dropdown
+        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Content Management
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" asp-controller="Coupon" asp-action="CouponIndex">Coupon</a></li>
+                                <li><a class="dropdown-item" href="#">Another action</a></li>
+                            </ul>
+                        </li>
+G. Added the Controller for the Coupon as defined in the dropdown and CouponIndex method.
+    Fetch View - Make a get call to load the data and assign to Model and call the view - (Add view)
+    Similarly the Delete and Insert View can be designed, Please view the changes
+H. Toastr referece is used at last, Download the Toastr js link and used in the _Notification.cshtml and make sure RenderBody()
+   section, the partial view is referenced.
+

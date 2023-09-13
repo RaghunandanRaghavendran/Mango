@@ -1,0 +1,22 @@
+﻿Coupon Services are only meant for the simple CRUD operation of providing the Coupons
+
+Design
+
+1. Created the ASP Net WEBAPI project with .Net 7.0 and disabled the https type because there was an error in importing 
+   the certificates, the application port also changed for 7001.
+2. Added the packages for entity framework, automapper, SQL and EntityFrameworkCore, Please refer to the packages by rightclick 
+   on the project and check the Edit Project files for the dependencies
+3. Added the Models and DTOs, it has simple 4 props for CouponId, Code, Discout price and MaxAmount
+4. Added the ApplicationDBContext and defined the property for the Coupons
+5. Added the section for SQL in Program.cs and added the configuration in appSettings.json
+6. Started migrations for creating the Tables and Db
+7. Added RegisterMaps for mapping the CouponDto and Coupon Model props
+8. AutoMapper is added in Program.cs so that it can be used as a dependecy injection anywhere in the project
+          IMapper mapper = MappingConfig.RegisterMaps().CreateMapper();
+          builder.Services.AddSingleton(mapper);
+          builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+9. Defined the Controller for CRUD operations.
+10. To have the consistent Response, we defined the Model ResponseType (ResponseDTO as per the course) which has Result, 
+    Message and IsSuccess
+11. Changed the Controller methods to return the ActionResult<ResponseType> and wrap the response inside the Result 
+    property of the ResponseType
