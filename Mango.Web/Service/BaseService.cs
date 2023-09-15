@@ -108,6 +108,8 @@ namespace Mango.Web.Service
                         return new() { IsSuccess = false, Message = "UnAuthorized" };
                     case HttpStatusCode.InternalServerError:
                         return new() { IsSuccess = false, Message = "Internal Server Error" };
+                    case HttpStatusCode.UnsupportedMediaType:
+                        return new() { IsSuccess = false, Message = "Unsupported media format" };
                     default:
                         var apiContent = await apiResponse.Content.ReadAsStringAsync();
                         var apiResponseDto = JsonConvert.DeserializeObject<ResponseType>(apiContent);

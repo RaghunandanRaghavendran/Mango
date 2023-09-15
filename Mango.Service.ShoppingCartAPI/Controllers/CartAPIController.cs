@@ -4,6 +4,7 @@ using Mango.Services.ShoppingCartAPI.Data;
 using Mango.Services.ShoppingCartAPI.Models;
 using Mango.Services.ShoppingCartAPI.Models.DTOs;
 using Mango.Services.ShoppingCartAPI.Services.IServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,8 +21,8 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         private readonly ICouponService _couponService;
         private readonly IMessageBus _messageBus;
         private readonly IConfiguration _config;
-        public CartAPIController(IMapper mapper, ApplicationDbContext dbContext, 
-            ICouponService couponService, 
+        public CartAPIController(IMapper mapper, ApplicationDbContext dbContext,
+            ICouponService couponService,
             IProductService productService,
             IMessageBus messageBus,
             IConfiguration config)
@@ -36,6 +37,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             _config = config;
         }
 
+        [Authorize]
         [HttpGet("GetCart/{userId}")]
         public async Task<ResponseType> GetCart(string userId)
         {
@@ -78,7 +80,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             return _responseType;
         }
 
-
+        [Authorize]
         [HttpPost("CartUpsert")]
         public async Task<ResponseType> CartUpsert(UpsertShoppingCartDTO cartDTO)
         {
@@ -129,6 +131,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             return _responseType;
         }
 
+        [Authorize]
         [HttpPost("RemoveCart")]
         public async Task<ResponseType> RemoveCart([FromBody] int cartDetailsId)
         {
@@ -158,6 +161,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             return _responseType;
         }
 
+        [Authorize]
         [HttpPost("ApplyCoupon")]
         public async Task<object> ApplyCoupon([FromBody] AddOrRemoveCouponDTO cartDto)
         {
@@ -176,7 +180,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             }
             return _responseType;
         }
-
+        [Authorize]
         [HttpPost("RemoveCoupon")]
         public async Task<object> RemoveCoupon([FromBody] AddOrRemoveCouponDTO cartDto)
         {
@@ -196,6 +200,40 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             return _responseType;
         }
 
+        [Authorize]
+        [Route("RemoveCartByUser/{userId}")]
+        [HttpDelete]
+        public async Task<ResponseType> RemoveCartByUserID(string userId)
+        {
+            try
+            {
+                Cart cart = _dbcontext.Carts.SingleOrDefault(c => c.UserId == userId);
+                if (cart != null)
+                {
+                    IEnumerable<CartDetails> cartDetails = _dbcontext.CartDetails.Where(u => u.CartId == cart.CartId);
+                    foreach (var cartDetail in cartDetails)
+                    {
+                        _dbcontext.Remove(cartDetail);
+                    }
+                    int removeCartDetailsCount = await _dbcontext.SaveChangesAsync();
+
+                    if (removeCartDetailsCount > 0)
+                    {
+                        _dbcontext.Remove(cart);
+                        await _dbcontext.SaveChangesAsync();
+                    }
+                }
+                _responseType.Result = true;
+            }
+            catch (Exception ex)
+            {
+                _responseType.IsSuccess = false;
+                _responseType.Message = ex.ToString();
+            }
+            return _responseType;
+        }
+
+        [Authorize]
         [HttpPost("EmailCartRequest")]
         public async Task<object> EmailCartRequest([FromBody] ShoppingCartDTO cartDto)
         {
@@ -206,7 +244,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                     await _messageBus.PublishMessage(cartDto, _config.GetValue<string>("TopicAndQueueNames:EmailShoppingCartQueue"));
                     _responseType.Result = true;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _responseType.IsSuccess = false;
                     _responseType.Message = ex.ToString();
