@@ -9,6 +9,7 @@ using Mango.Services.OrderAPI.Utility;
 using Mango.ServicesOrderAPI.Services.IServices;
 using Mango.ServicesOrderAPI.Services;
 using Mango.MessageBus;
+using Mango.Services.OrderAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,7 @@ builder.Services.AddSingleton(mapper);
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IMessageBus, MessageBus>();
 
 
@@ -31,7 +33,9 @@ builder.Services.AddScoped<BackEndAPIAuthenticationHttpClientHandler>();
 builder.Services.AddHttpClient("Product",
     u => u.BaseAddress = new Uri(builder.Configuration["ServiceUrls:ProductAPI"]))
     .AddHttpMessageHandler<BackEndAPIAuthenticationHttpClientHandler>();
-
+builder.Services.AddHttpClient("Cart",
+    u => u.BaseAddress = new Uri(builder.Configuration["ServiceUrls:CartAPI"]))
+    .AddHttpMessageHandler<BackEndAPIAuthenticationHttpClientHandler>();
 builder.Services.AddSwaggerGen(option =>
 {
     option.AddSecurityDefinition(name: JwtBearerDefaults.AuthenticationScheme, securityScheme: new OpenApiSecurityScheme

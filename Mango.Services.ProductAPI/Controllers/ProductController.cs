@@ -84,22 +84,44 @@ namespace Mango.Services.ProductAPI.Controllers
 		}
 
 		[HttpPost]
-        [Authorize]
-        public ActionResult<ResponseType> Post([FromBody] ProductDTO productDTO)
+        [Authorize(Roles ="ADMIN")]
+        public ActionResult<ResponseType> Post([FromForm]ProductDTO productDTO)
 		{
 			Product product = new Product();
-			try
-			{
-				if (productDTO == null)
-				{
-					return BadRequest();
-				}
 
-				product = _mapper.Map<Product>(productDTO);
+            try
+			{
+                if (productDTO == null)
+                {
+                    return BadRequest();
+                }
+
+                product = _mapper.Map<Product>(productDTO);
 				_dbContext.Products.Add(product);
 				_dbContext.SaveChanges();
 
-				_response.Result = _mapper.Map<ProductDTO>(product);
+				if(productDTO.Image != null)
+				{
+					string fileName = product.ProductId + Path.GetExtension(productDTO.Image.FileName);
+					string filePath = @"wwwroot\ProductImages\" + fileName;
+					var filePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), filePath);
+
+					using(var fileStream = new FileStream(filePathDirectory, FileMode.Create))
+					{
+						productDTO.Image.CopyTo(fileStream);
+					}
+
+                    var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+                    product.ImageUrl = baseUrl + "/ProductImages/" + fileName;
+                    product.ImageLocalPath = filePath;
+                }
+				else
+				{
+                    product.ImageUrl = "https://placehold.co/600x400";
+                }
+                _dbContext.Products.Update(product);
+                _dbContext.SaveChanges();
+                _response.Result = _mapper.Map<ProductDTO>(product);
 
 			}
 			catch (Exception ex)
@@ -107,12 +129,12 @@ namespace Mango.Services.ProductAPI.Controllers
 				_response.Message = ex.Message;
 				_response.IsSuccess = false;
 			}
-			return CreatedAtRoute("GetProductById", new { id = product.ProductId }, _response); ;
-		}
+            return CreatedAtRoute("GetProductById", new { id = product.ProductId }, _response);
+        }
 
 		[HttpPut]
-        [Authorize]
-        public ActionResult<ResponseType> Put([FromBody] ProductDTO productDTO)
+        [Authorize(Roles ="ADMIN")]
+        public ActionResult<ResponseType> Put([FromForm] ProductDTO productDTO)
 		{
 			try
 			{
@@ -123,7 +145,32 @@ namespace Mango.Services.ProductAPI.Controllers
 
 				Product product = _mapper.Map<Product>(productDTO);
 
-				_dbContext.Products.Update(product);
+                if (productDTO.Image != null)
+                {
+                    if (!string.IsNullOrEmpty(product.ImageLocalPath))
+                    {
+                        var oldFilePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), product.ImageLocalPath);
+                        FileInfo file = new FileInfo(oldFilePathDirectory);
+                        if (file.Exists)
+                        {
+                            file.Delete();
+                        }
+                    }
+
+                    string fileName = product.ProductId + Path.GetExtension(productDTO.Image.FileName);
+                    string filePath = @"wwwroot\ProductImages\" + fileName;
+                    var filePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), filePath);
+                    using (var fileStream = new FileStream(filePathDirectory, FileMode.Create))
+                    {
+                        productDTO.Image.CopyTo(fileStream);
+                    }
+                    var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+                    product.ImageUrl = baseUrl + "/ProductImages/" + fileName;
+                    product.ImageLocalPath = filePath;
+                }
+
+
+                _dbContext.Products.Update(product);
 				_dbContext.SaveChanges();
 
 
@@ -139,7 +186,7 @@ namespace Mango.Services.ProductAPI.Controllers
 		}
 
 		[HttpDelete]
-        [Authorize]
+        [Authorize(Roles ="ADMIN")]
         [Route("{id:int}")]
 		public ActionResult<ResponseType> Delete(int id)
 		{
@@ -156,7 +203,18 @@ namespace Mango.Services.ProductAPI.Controllers
 				{
 					return NotFound();
 				}
-				_dbContext.Products.Remove(product);
+
+                if (!string.IsNullOrEmpty(product.ImageLocalPath))
+                {
+                    var oldFilePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), product.ImageLocalPath);
+                    FileInfo file = new FileInfo(oldFilePathDirectory);
+                    if (file.Exists)
+                    {
+                        file.Delete();
+                    }
+                }
+
+                _dbContext.Products.Remove(product);
 				_dbContext.SaveChanges();
 
 			}

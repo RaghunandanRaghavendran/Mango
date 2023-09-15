@@ -22,12 +22,14 @@ namespace Mango.Services.OrderAPI.Controllers
         private readonly ResponseType _responseType;
         private readonly ApplicationDbContext _dbcontext;
         private readonly IProductService _productService;
+        private readonly ICartService _cartService;
         private readonly IConfiguration _config;
         private readonly IMessageBus _messageBus;
         public OrderAPIController(IMapper mapper, ApplicationDbContext dbContext,
            IProductService productService,
            IConfiguration config,
-           IMessageBus messageBus)
+           IMessageBus messageBus,
+           ICartService cartService)
         {
             _mapper = mapper;
             _dbcontext = dbContext;
@@ -35,6 +37,7 @@ namespace Mango.Services.OrderAPI.Controllers
             _productService = productService;
             _config = config;
             _messageBus = messageBus;
+            _cartService = cartService;
         }
 
         [Authorize]
@@ -162,6 +165,10 @@ namespace Mango.Services.OrderAPI.Controllers
                     string topicName = _config.GetValue<string>("TopicAndQueueNames:OrderCreatedTopic");
                     await _messageBus.PublishMessage(rewardsDTO, topicName);
                     _responseType.Result = _mapper.Map<OrderDTO>(order);
+
+                    // Empty the cart all together once the order is completed...
+                    _cartService.RemoveCartForUser(order.UserId);
+
                 }
             }
             catch (Exception ex)
